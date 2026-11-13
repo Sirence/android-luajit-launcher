@@ -648,6 +648,18 @@ class MainActivity : NativeActivity(), LuaInterface,
         openWifi()
     }
 
+    override fun canToggleWifi(): Boolean {
+        return canToggleWifiRadio()
+    }
+
+    override fun isWifiEnabled(): Boolean {
+        return isWifiRadioOn()
+    }
+
+    override fun setWifiEnabled(enabled: Boolean): Boolean {
+        return setWifiRadio(enabled)
+    }
+
     override fun performHapticFeedback(constant: Int, force: Int) {
         val rootView = view ?: window.decorView.findViewById<View>(android.R.id.content)
         hapticFeedback(constant, force > 0, rootView)

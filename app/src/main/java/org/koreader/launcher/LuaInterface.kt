@@ -67,6 +67,9 @@ interface LuaInterface {
     fun needsWakelocks(): Boolean
     fun openLink(url: String): Boolean
     fun openWifiSettings()
+    fun canToggleWifi(): Boolean
+    fun isWifiEnabled(): Boolean
+    fun setWifiEnabled(enabled: Boolean): Boolean
     fun performHapticFeedback(constant: Int, force: Int)
     fun requestIgnoreBatteryOptimizations(rationale: String, okButton: String, cancelButton: String)
     fun requestWriteSystemSettings(rationale: String, okButton: String, cancelButton: String)

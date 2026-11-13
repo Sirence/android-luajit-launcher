@@ -10,6 +10,7 @@ import android.graphics.Point
 import android.graphics.Rect
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
+import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.Environment
 import android.provider.Settings
@@ -190,6 +191,35 @@ fun Activity.openWifi() {
     }
     startActivityCompat(this, openWifiIntent)
 }
+
+/* Direct Wi-Fi radio control.
+ * WifiManager.setWifiEnabled() works for regular apps up to Android 9 (API 28).
+ * Since Android 10 it is a no-op for apps targeting API >= 29, so we report that
+ * we can't toggle and callers fall back to opening the system settings. */
+fun Activity.canToggleWifiRadio(): Boolean =
+    Build.VERSION.SDK_INT < Build.VERSION_CODES.Q && wifiManager() != null
+
+fun Activity.isWifiRadioOn(): Boolean = try {
+    wifiManager()?.isWifiEnabled ?: false
+} catch (e: Exception) {
+    e.printStackTrace()
+    false
+}
+
+@Suppress("DEPRECATION")
+fun Activity.setWifiRadio(enabled: Boolean): Boolean {
+    if (!canToggleWifiRadio()) return false
+    return try {
+        wifiManager()?.setWifiEnabled(enabled) ?: false
+    } catch (e: Exception) {
+        // SecurityException if CHANGE_WIFI_STATE is somehow missing/revoked
+        e.printStackTrace()
+        false
+    }
+}
+
+private fun Activity.wifiManager(): WifiManager? =
+    applicationContext.getSystemService(Context.WIFI_SERVICE) as? WifiManager
 
 fun Activity.pruneCacheDir() {
     try {
