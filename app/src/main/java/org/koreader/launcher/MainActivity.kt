@@ -48,7 +48,7 @@ class MainActivity : NativeActivity(), LuaInterface,
     // Device cutout - only used on API 28+
     private var topInsetHeight: Int = 0
 
-    // Fullscreen - only used on API levels 16-18
+    // Fullscreen - used on API levels 16-18 and 19+ (immersive mode vs. regular window with system bars)
     private var fullscreen: Boolean = true
 
     // Splashscreen is active
@@ -586,7 +586,8 @@ class MainActivity : NativeActivity(), LuaInterface,
     }
 
     override fun isFullscreen(): Boolean {
-        return if (Build.VERSION.SDK_INT == Build.VERSION_CODES.JELLY_BEAN_MR2) {
+        return if (Build.VERSION.SDK_INT == Build.VERSION_CODES.JELLY_BEAN_MR2 ||
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             fullscreen
         } else {
             false
@@ -716,6 +717,9 @@ class MainActivity : NativeActivity(), LuaInterface,
     override fun setFullscreen(enabled: Boolean) {
         if (Build.VERSION.SDK_INT == Build.VERSION_CODES.JELLY_BEAN_MR2) {
             fullscreen = enabled
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            fullscreen = enabled
+            runOnUiThread { setFullscreenLayout() }
         }
     }
 
@@ -836,13 +840,21 @@ class MainActivity : NativeActivity(), LuaInterface,
     private fun setFullscreenLayout() {
         val decorView = window.decorView
         when {
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT ->
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT && !fullscreen -> {
+                // Regular window: keep the system bars visible, the content rect (and thus
+                // the Lua viewport) excludes them.
+                window.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
+                decorView.systemUiVisibility = 0
+            }
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT -> {
+                window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
                 decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN or
                     View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
                     View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
                     View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
                     View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
                     View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+            }
             else -> decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LOW_PROFILE
         }
     }
